@@ -27,7 +27,7 @@ public class LocalTest {
 	public static void main(String[] args) {
 		LocalTest test = new LocalTest();
 		test.init();
-		test.read();
+		test.test();
 		
 		
 
@@ -57,7 +57,12 @@ public class LocalTest {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		PollDataDBFactory.init(LevelDBPollDataDB.class, p);
+		try {
+			PollDataDBFactory.init(Class.forName(p.getProperty("clazz")), p);
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	
 	}
 	int count = 10;
