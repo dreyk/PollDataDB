@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import me.prettyprint.cassandra.serializers.ByteBufferSerializer;
+import me.prettyprint.cassandra.serializers.BytesArraySerializer;
 import me.prettyprint.cassandra.service.ThriftKsDef;
 import me.prettyprint.cassandra.service.template.ColumnFamilyTemplate;
 import me.prettyprint.cassandra.service.template.ColumnFamilyUpdater;
@@ -17,6 +18,7 @@ import me.prettyprint.hector.api.Keyspace;
 import me.prettyprint.hector.api.ddl.ColumnFamilyDefinition;
 import me.prettyprint.hector.api.ddl.ComparatorType;
 import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
+import me.prettyprint.hector.api.exceptions.HectorException;
 import me.prettyprint.hector.api.factory.HFactory;
 
 
@@ -25,11 +27,16 @@ public class CasandraPollDataDB implements PollDataDB {
 	Cluster cluster;
 	KeyspaceDefinition keyspaceDef;
 	Keyspace ksp;
-	ColumnFamilyTemplate<ByteBuffer, ByteBuffer> template;
+	ColumnFamilyTemplate<byte[], byte[]> template;
 	long archiveDeps = 60l*60l*1000l*24l;
 	public CasandraPollDataDB(){
 		cluster = HFactory.getOrCreateCluster("polldb","192.168.66.34:9160");
-		keyspaceDef = cluster.describeKeyspace("polldata");
+		try {
+			keyspaceDef = cluster.describeKeyspace("polldata");
+		} catch (HectorException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		if(keyspaceDef==null){
 			ColumnFamilyDefinition cfDef = HFactory
 					.createColumnFamilyDefinition("polldata",
@@ -38,10 +45,11 @@ public class CasandraPollDataDB implements PollDataDB {
 			keyspaceDef = HFactory.createKeyspaceDefinition(
 					"polldata", ThriftKsDef.DEF_STRATEGY_CLASS,
 					3, Arrays.asList(cfDef));
+			cluster.addKeyspace(keyspaceDef, true);
 		}
 		ksp = HFactory.createKeyspace("polldata", cluster);
 		template =
-                new ThriftColumnFamilyTemplate<ByteBuffer, ByteBuffer>(ksp,"polldata",ByteBufferSerializer.get(),ByteBufferSerializer.get());
+                new ThriftColumnFamilyTemplate<byte[], byte[]>(ksp,"polldata",BytesArraySerializer.get(),BytesArraySerializer.get());
 		
 	}
 	public int stote(List<? extends PollData> datas, long timeout, TimeUnit unit)
@@ -60,7 +68,7 @@ public class CasandraPollDataDB implements PollDataDB {
 		});
 		PollData prev = datas.get(0);
 		long prevPartition = partition(prev.getTime());
-		ColumnFamilyUpdater<ByteBuffer, ByteBuffer> updater = template.createUpdater(dk((Long)prev.getComparableId(),prevPartition));
+		ColumnFamilyUpdater<byte[],byte[]> updater = template.createUpdater(dk((Long)prev.getComparableId(),prevPartition));
 		updater.setByteArray(cl(prev.getTime()),prev.getLevelDBValue());
 		for(int i = 1 ; i < datas.size() ; i++){
 			PollData d = datas.get(i);
@@ -87,19 +95,20 @@ public class CasandraPollDataDB implements PollDataDB {
 		// TODO Auto-generated method stub
 
 	}
-	private ByteBuffer dk(long id,long p){
-		ByteBuffer buff = ByteBuffer.allocate(16);
+	private byte[] dk(long id,long p){
+		ByteBuffer buff = ByteBuffer.allocate(17);
+		buff.put((byte)1);
 		buff.putLong(id);
 		buff.putLong(p);
-		return buff;
+		return buff.array();
 	}
 	private long partition(long time){
 		return (long)(time/archiveDeps);
 	}
-	private ByteBuffer cl(long time){
+	private byte[] cl(long time){
 		ByteBuffer buff = ByteBuffer.allocate(8);
 		buff.putLong(time);
-		return buff;
+		return buff.array();
 	}
 	
 }

@@ -1,4 +1,4 @@
-package test;
+package com.satissoft.mon.polldb;
 
 import java.io.File;
 import java.io.FileReader;
@@ -13,11 +13,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.satissoft.mon.polldb.LevelDBPollDataDB;
-import com.satissoft.mon.polldb.PollData;
-import com.satissoft.mon.polldb.PollDataDBException;
-import com.satissoft.mon.polldb.PollDataDBFactory;
-import com.satissoft.mon.polldb.SimplePollData;
 
 public class LocalTest {
 
@@ -50,10 +45,11 @@ public class LocalTest {
 		Properties p = new Properties();
 		//p.
 		try {
-			InputStream in  = ClassLoader.getSystemClassLoader().getResourceAsStream("sample.conf");
-			p.load(in);
-			in.close();
-		} catch (IOException e) {
+			//InputStream in  = ClassLoader.getSystemClassLoader().getResourceAsStream("sample.conf");
+			//p.load(in);
+			//in.close();
+			p.put("clazz", "com.satissoft.mon.polldb.CasandraPollDataDB");
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
