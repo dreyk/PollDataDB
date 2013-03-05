@@ -33,8 +33,8 @@ public class LocalTest {
 
 	}
 	public void read(){
-		SimplePollData from = new SimplePollData(0l,System.currentTimeMillis()-1000l*60l*60l,0,0,"");
-		SimplePollData to = new SimplePollData(0l,System.currentTimeMillis(),0,0,"");
+		SimplePollData from = new SimplePollData(0l,System.currentTimeMillis()-1000l*60l*60l,0,"");
+		SimplePollData to = new SimplePollData(0l,System.currentTimeMillis(),0,"");
 		try {
 			List<SimplePollData> l = (List<SimplePollData>)PollDataDBFactory.getFactory().read(from, to,1,TimeUnit.MINUTES);
 			for(SimplePollData d:l){
@@ -113,7 +113,7 @@ public class LocalTest {
 		long delta = 0;
 		int count = 0;
 		while((delta=(System.currentTimeMillis()-start))<testime*1000l*60l){
-			SimplePollData d = new SimplePollData(t % device+id,t+start,0,0,"test");
+			SimplePollData d = new SimplePollData(t % device+id,t+start,0,null);
 			datas.add(d);
 			count++;
 			t++;

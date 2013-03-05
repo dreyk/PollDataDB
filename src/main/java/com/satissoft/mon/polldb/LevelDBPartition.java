@@ -46,13 +46,11 @@ public class LevelDBPartition implements Runnable{
 		this.partition = partition;
 		this.name = "polldata-"+dataRoot.getName()+"."+partition;
 		this.tasks = new ArrayBlockingQueue<PollDataDBTask>(10000);
-		//this.readPool = Executors.newFixedThreadPool(10);
 	}
 	public void execute(PollDataDBTask task,long timeout,TimeUnit unit) throws InterruptedException{
 		tasks.offer(task, timeout, unit);
 	}
 	public void start(){
-		log.debug(name+" starting leveldb instance.");
 		Thread hostedThread = new Thread(this,name);
 		isStarted = true;
 		hostedThread.start();
@@ -68,7 +66,6 @@ public class LevelDBPartition implements Runnable{
 	public void run(){
 		Options options = new Options();
 		options.createIfMissing(true);
-		log.debug(name+" init leveldb instance.");
 		try {
 			db = factory.open(new File(dataRoot,Long.toString(partition)), options);
 			log.debug(name+" instace started.");
@@ -76,6 +73,7 @@ public class LevelDBPartition implements Runnable{
 		} catch (IOException e1) {
 			e1.printStackTrace();
 			log.error(name+" Can't start.",e1);
+			state = 0;
 			
 		}
 		while(isStarted){
@@ -143,6 +141,7 @@ public class LevelDBPartition implements Runnable{
 	}
 	private void read(ScanPollDataTask task){
 		final ReadOptions ro = new ReadOptions();
+		ro.fillCache(false);
 		ro.snapshot(db.getSnapshot());
 		DBIterator iterator = db.iterator(ro);
 		task.commit(new ScanPollDataReader(iterator));
@@ -152,7 +151,7 @@ public class LevelDBPartition implements Runnable{
 			doRemove();
 		}
 		if(state!=1){
-			task.getResult().delivery(new PollDataDBException("partiotion "+name+" not ready"));
+			task.getResult().delivery(new PollDataDBException("partiotion "+name+" not ready state="+state));
 		}
 		if(task instanceof StorePollDataTask){
 			store((StorePollDataTask)task);

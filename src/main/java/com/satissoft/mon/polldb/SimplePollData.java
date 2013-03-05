@@ -9,7 +9,6 @@ public class SimplePollData implements PollData{
 		i.setId(buffer.getLong());
 		i.setTime(buffer.getLong());
 		buffer = ByteBuffer.wrap(data);
-		i.setSeverity(buffer.getInt());
 		i.setStatus(buffer.getInt());
 		i.setValue(new String(buffer.array(),buffer.position(),buffer.remaining()));
 		return i;
@@ -21,23 +20,21 @@ public class SimplePollData implements PollData{
 		return buffer.array();
 	}
 	public byte[] getLevelDBValue() {
-		ByteBuffer buffer = ByteBuffer.allocate(8+value.length());
-		buffer.putInt(severity);
+		ByteBuffer buffer = ByteBuffer.allocate(4+(value==null?0:value.length()));
 		buffer.putInt(status);
-		buffer.put(value.getBytes());
+		if(value!=null)
+			buffer.put(value.getBytes());
 		return buffer.array();
 	}
 	Long id;
 	Long time;
-	int severity;
 	public SimplePollData(){
 		
 	}
-	public SimplePollData(Long id, Long time, int severity, int status, String value) {
+	public SimplePollData(Long id, Long time, int status, String value) {
 		super();
 		this.id = id;
 		this.time = time;
-		this.severity = severity;
 		this.status = status;
 		this.value = value;
 	}
@@ -57,12 +54,6 @@ public class SimplePollData implements PollData{
 	}
 	public void setTime(Long time) {
 		this.time = time;
-	}
-	public int getSeverity() {
-		return severity;
-	}
-	public void setSeverity(int severity) {
-		this.severity = severity;
 	}
 	public int getStatus() {
 		return status;

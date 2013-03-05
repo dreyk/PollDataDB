@@ -45,7 +45,6 @@ public class LevelDBPollDataDB implements PollDataDB {
 			if(data.getTime()<minTime || data.getTime()>maxTime)
 				continue;
 			long partition = ring.partition(data.getTime());
-			//System.out.println("p "+partition+" - "+data.getTime());
 			if(partition!=prev){
 				if(prev!=-1){
 					if(ldatas.size()>0)
