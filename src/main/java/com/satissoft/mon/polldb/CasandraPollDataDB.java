@@ -52,37 +52,44 @@ public class CasandraPollDataDB implements PollDataDB {
                 new ThriftColumnFamilyTemplate<byte[], byte[]>(ksp,"polldata",BytesArraySerializer.get(),BytesArraySerializer.get());
 		
 	}
-	public int stote(List<? extends PollData> datas, long timeout, TimeUnit unit)
-			throws PollDataDBException {
-		if(datas.size()<1)
-			return 0;
-		Collections.sort(datas,new Comparator<PollData>() {
-			public int compare(PollData o1, PollData o2) {
-				int idc = o1.getComparableId().compareTo(o2.getComparableId());
-				if(idc==0)
-					return o1.getTime().compareTo(o2.getTime());
-				else
-					return idc;
-			}
-			
-		});
-		PollData prev = datas.get(0);
-		long prevPartition = partition(prev.getTime());
-		ColumnFamilyUpdater<byte[],byte[]> updater = template.createUpdater(dk((Long)prev.getComparableId(),prevPartition));
-		updater.setByteArray(cl(prev.getTime()),prev.getLevelDBValue());
-		for(int i = 1 ; i < datas.size() ; i++){
-			PollData d = datas.get(i);
-			long partition = partition(d.getTime());
-			if(d.getComparableId().compareTo(prev.getComparableId())!=0 || partition!=prevPartition){
-				updater.addKey(dk((Long)d.getComparableId(),partition));
-				updater.setByteArray(cl(d.getTime()),d.getLevelDBValue());
-			}
-			else if(prev.getTime().compareTo(d.getTime())!=0){
-				updater.setByteArray(cl(d.getTime()),d.getLevelDBValue());
-			}
+	public StoreResults stote(List<? extends PollData>  datas,long timeout,TimeUnit unit){
+		StoreResults res = new StoreResults();
+		if(datas==null || datas.size()<1){
+			return res;
 		}
-		template.executeBatch();
-		return 0;
+		try {
+			Collections.sort(datas,new Comparator<PollData>() {
+				public int compare(PollData o1, PollData o2) {
+					int idc = o1.getComparableId().compareTo(o2.getComparableId());
+					if(idc==0)
+						return o1.getTime().compareTo(o2.getTime());
+					else
+						return idc;
+				}
+				
+			});
+			PollData prev = datas.get(0);
+			long prevPartition = partition(prev.getTime());
+			ColumnFamilyUpdater<byte[],byte[]> updater = template.createUpdater(dk((Long)prev.getComparableId(),prevPartition));
+			updater.setByteArray(cl(prev.getTime()),prev.getLevelDBValue());
+			for(int i = 1 ; i < datas.size() ; i++){
+				PollData d = datas.get(i);
+				long partition = partition(d.getTime());
+				if(d.getComparableId().compareTo(prev.getComparableId())!=0 || partition!=prevPartition){
+					updater.addKey(dk((Long)d.getComparableId(),partition));
+					updater.setByteArray(cl(d.getTime()),d.getLevelDBValue());
+				}
+				else if(prev.getTime().compareTo(d.getTime())!=0){
+					updater.setByteArray(cl(d.getTime()),d.getLevelDBValue());
+				}
+			}
+			template.executeBatch();
+			res.addCount(datas.size());
+		} catch (Exception e) {
+			e.printStackTrace();
+			res.addError(datas.size(),e);
+		}
+		return res;
 	}
 
 	public List<? extends PollData> read(PollData from, PollData to,

@@ -45,10 +45,10 @@ public class LocalTest {
 		Properties p = new Properties();
 		//p.
 		try {
-			//InputStream in  = ClassLoader.getSystemClassLoader().getResourceAsStream("sample.conf");
-			//p.load(in);
-			//in.close();
-			p.put("clazz", "com.satissoft.mon.polldb.CasandraPollDataDB");
+			InputStream in  = ClassLoader.getSystemClassLoader().getResourceAsStream("sample.conf");
+			p.load(in);
+			in.close();
+			//p.put("clazz", "com.satissoft.mon.polldb.CasandraPollDataDB");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -124,12 +124,12 @@ public class LocalTest {
 			}
 			if(count==batchSize){
 				try {
-					int wr = 0;
-					if((wr=PollDataDBFactory.getFactory().stote(datas,1,TimeUnit.MINUTES))!=count){
+					StoreResults wr = PollDataDBFactory.getFactory().stote(datas,1,TimeUnit.MINUTES);
+					if(wr.getCount()!=count){
 						System.err.println("Write bad count! "+wr);
 					}
 					ops.getAndAdd(count);
-				} catch (PollDataDBException e) {
+				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}

@@ -24,43 +24,65 @@ public class LevelDBPollDataDB implements PollDataDB {
 		ring = new LevelDBRing(dataRoot,sync, partitionSize, archiveDeps);
 		isClosed = false;
 	}
-	public int stote(List<? extends PollData>  datas,long timeout,TimeUnit unit) throws PollDataDBException{
-		if(isClosed)
-			throw new PollDataDBException("DB is closed");
-		Collections.sort(datas,new Comparator<PollData>() {
+	public StoreResults stote(List<? extends PollData>  datas,long timeout,TimeUnit unit){
+		StoreResults res = new StoreResults();
+		if(datas==null || datas.size()<1){
+			return res;
+		}
+		if (isClosed) {
+			res.addError(datas.size(), new PollDataDBException("DB is closed"));
+			return res;
+		}
+
+		Collections.sort(datas, new Comparator<PollData>() {
 			public int compare(PollData o1, PollData o2) {
-				if(o1.getTime()==o2.getTime())
+				if (o1.getTime() == o2.getTime())
 					return o1.getComparableId().compareTo(o2.getComparableId());
 				else
 					return o1.getTime().compareTo(o2.getTime());
 			}
-			
+
 		});
 		List<PollData> ldatas = null;
 		long prev = -1;
-		int count = 0;
 		long minTime = ring.getMinTime();
 		long maxTime = ring.getMaxTime();
-		for(PollData data:datas){
-			if(data.getTime()<minTime || data.getTime()>maxTime)
+		for (PollData data : datas) {
+			if (data.getTime() < minTime || data.getTime() > maxTime) {
+				res.addSkip(1);
 				continue;
+			}
 			long partition = ring.partition(data.getTime());
-			if(partition!=prev){
-				if(prev!=-1){
-					if(ldatas.size()>0)
-						count += write(partition,ldatas,timeout,unit);
+			if (partition != prev) {
+				if (prev != -1) {
+					if (ldatas != null && ldatas.size() > 0) {
+						try {
+							StoreResults tmp = write(partition, ldatas, timeout, unit);
+							res.add(tmp);
+						} catch (Exception e) {
+							e.printStackTrace();
+							res.addError(ldatas.size(), e);
+						}
+					}
 				}
 				ldatas = new ArrayList<PollData>();
 				prev = partition;
 			}
 			ldatas.add(data);
 		}
-		if(ldatas.size()>0){
-			count += write(prev,ldatas,timeout,unit);
+		if (ldatas != null && ldatas.size() > 0) {
+			try {
+				StoreResults tmp = write(prev, ldatas, timeout, unit);
+				res.add(tmp);
+			} catch (Exception e) {
+				e.printStackTrace();
+				res.addError(ldatas.size(), e);
+			}
 		}
-		return count;
+
+		return res;
 	}
-	private int write(long partition,List<PollData> datas,long timeout,TimeUnit unit) throws PollDataDBException{
+	private StoreResults write(long partition,List<PollData> datas,long timeout,TimeUnit unit) throws PollDataDBException{
 		try {
 			Collections.sort(datas,new Comparator<PollData>() {
 				public int compare(PollData o1, PollData o2) {
@@ -75,9 +97,13 @@ public class LevelDBPollDataDB implements PollDataDB {
 			LevelDBPartition instance = ring.getPartiotion(partition);
 			PollDataDBTask task = new StorePollDataTask(datas);
 			instance.execute(task, timeout, unit);
-			Object result = task.getResult().getResult(timeout, unit);
-			if(result instanceof Integer){
-				return (Integer)result;
+			Promise promise = task.getResult();
+			Object result = promise.getResult(timeout, unit);
+			if(!promise.isDelivered()){
+				throw new PollDataDBException("Timeout write to partition "+partition);
+			}
+			else if(result instanceof StoreResults){
+				return (StoreResults)result;
 			}
 			else if(result instanceof Throwable){
 				throw new PollDataDBException("cant write to partition "+partition,(Throwable)result);
@@ -86,7 +112,7 @@ public class LevelDBPollDataDB implements PollDataDB {
 				throw new PollDataDBException("Bad write result to partition "+partition);
 			}
 		} catch (InterruptedException e) {
-			throw new PollDataDBException("cant write to partition "+partition,e);
+			throw new PollDataDBException("Write to partition interrupted"+partition,e);
 		}
 	}
 	public List<? extends PollData>  read(PollData from,PollData to,long timeout,TimeUnit unit) throws PollDataDBException{

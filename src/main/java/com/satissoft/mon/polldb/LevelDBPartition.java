@@ -112,32 +112,34 @@ public class LevelDBPartition implements Runnable{
 		}
 	}
 	private void store(StorePollDataTask task){
-		int count = 0;
+		StoreResults res = new StoreResults();
 		WriteBatch batch = null;
 		try {
 			WriteOptions wr = new WriteOptions();
 			wr = wr.sync(sync);
 			batch = db.createWriteBatch();
+			int count = 0;
 			for(LevelDBKV kv:task.getData()){
 				batch.put(kv.getLevelDBKey(),kv.getLevelDBValue());
 				count++;
 			}
 			db.write(batch,wr);
+			res.addCount(count);
 		} catch (DBException e) {
-			count = 0;
 			log.error("Can't write to leveldb",e);
+			res.addError(task.getData()==null?0:task.getData().size(),e);
 		}
 		finally{
 			if(db!=null){
 				try {
 					batch.close();
 				} catch (Exception e2) {
-					count = 0;
 					log.error("Can't close leveldb batch",e2);
+					res.addError(e2);
 				}
 			}
 		}
-		task.commit(count);
+		task.commit(res);
 	}
 	private void read(ScanPollDataTask task){
 		final ReadOptions ro = new ReadOptions();
