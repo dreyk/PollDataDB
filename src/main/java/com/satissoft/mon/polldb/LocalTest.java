@@ -45,10 +45,10 @@ public class LocalTest {
 		Properties p = new Properties();
 		//p.
 		try {
-			InputStream in  = ClassLoader.getSystemClassLoader().getResourceAsStream("sample.conf");
-			p.load(in);
-			in.close();
-			//p.put("clazz", "com.satissoft.mon.polldb.CasandraPollDataDB");
+			//InputStream in  = ClassLoader.getSystemClassLoader().getResourceAsStream("sample.conf");
+			//p.load(in);
+			//in.close();
+			p.put("clazz", "com.satissoft.mon.polldb.CasandraPollDataDB");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
