@@ -1,8 +1,5 @@
 package com.satissoft.mon.polldb;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +19,7 @@ public class LocalTest {
 	public static void main(String[] args) {
 		LocalTest test = new LocalTest();
 		test.init();
-		test.test();
+		test.testWite();
 		
 		
 
@@ -45,10 +42,10 @@ public class LocalTest {
 		Properties p = new Properties();
 		//p.
 		try {
-			//InputStream in  = ClassLoader.getSystemClassLoader().getResourceAsStream("sample.conf");
-			//p.load(in);
-			//in.close();
-			p.put("clazz", "com.satissoft.mon.polldb.CasandraPollDataDB");
+			InputStream in  = ClassLoader.getSystemClassLoader().getResourceAsStream("sample.conf");
+			p.load(in);
+			in.close();
+			//p.put("clazz", "com.satissoft.mon.polldb.CasandraPollDataDB");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -124,6 +121,10 @@ public class LocalTest {
 			}
 			if(count==batchSize){
 				try {
+				    if(PollDataDBFactory.getFactory()==null){
+				    	System.err.println("Why null");
+				    	System.exit(-1);
+				    }
 					StoreResults wr = PollDataDBFactory.getFactory().stote(datas,1,TimeUnit.MINUTES);
 					if(wr.getCount()!=count){
 						System.err.println("Write bad count! "+wr);
@@ -138,5 +139,45 @@ public class LocalTest {
 			}
 		}
 	}
+
+	public void testWite() {
+		List<SimplePollData> datas = new ArrayList<SimplePollData>();
+		Long start = System.currentTimeMillis();
+		int count = 0;
+		for(long t = 0 ; t < 100 ; t++){
+		SimplePollData d = new SimplePollData(0l, start+t, 0, "test");
+		datas.add(d);
+		count++;
+		}
+
+		try {
+			if (PollDataDBFactory.getFactory() == null) {
+				System.err.println("Why null");
+				System.exit(-1);
+			}
+			StoreResults wr = PollDataDBFactory.getFactory().stote(datas, 1,
+					TimeUnit.MINUTES);
+			if (wr.getCount() != count) {
+				System.err.println("Write bad count! " + wr.getCount()+" ");
+				if(wr.getErrors().size()>0){
+					for(Throwable t:wr.getErrors()){
+						t.printStackTrace();
+					}
+				}
+			}
+			List<SimplePollData> l = (List<SimplePollData>)PollDataDBFactory.getFactory().read(new SimplePollData(0l,start,0,null),new SimplePollData(0l,start+100,0,null), 1,TimeUnit.MINUTES);
+			for(SimplePollData d:l){
+				System.out.println("data "+d.getId()+" "+d.getTime()+" "+d.getValue());
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		datas = new ArrayList<SimplePollData>();
+		count = 0;
+
+		PollDataDBFactory.getFactory().close();
+	}
+
 	
 }

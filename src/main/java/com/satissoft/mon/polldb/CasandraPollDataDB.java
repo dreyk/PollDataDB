@@ -83,7 +83,7 @@ public class CasandraPollDataDB implements PollDataDB {
 					updater.setByteArray(cl(d.getTime()),d.getLevelDBValue());
 				}
 			}
-			template.executeBatch();
+			template.executeBatch(updater.getCurrentMutator());
 			res.addCount(datas.size());
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -17,6 +17,9 @@ public class PollDataDBFactory {
 			else if(clazz.getName().equals(CasandraPollDataDB.class.getName())){
 				db = new CasandraPollDataDB();
 			}
+			else if(clazz.getName().equals(LiteTsPollDataDB.class.getName())){
+				db = new LiteTsPollDataDB(properties);
+			}
 		}
 	}
 }
