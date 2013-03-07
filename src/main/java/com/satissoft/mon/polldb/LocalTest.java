@@ -1,5 +1,6 @@
 package com.satissoft.mon.polldb;
 
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +20,7 @@ public class LocalTest {
 	public static void main(String[] args) {
 		LocalTest test = new LocalTest();
 		test.init();
-		test.testWite();
+		test.test();
 		
 		
 
@@ -42,7 +43,7 @@ public class LocalTest {
 		Properties p = new Properties();
 		//p.
 		try {
-			InputStream in  = ClassLoader.getSystemClassLoader().getResourceAsStream("sample.conf");
+			InputStream in  = new FileInputStream("sample.conf");
 			p.load(in);
 			in.close();
 			//p.put("clazz", "com.satissoft.mon.polldb.CasandraPollDataDB");
