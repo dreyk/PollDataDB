@@ -20,7 +20,7 @@ public class LocalTest {
 	public static void main(String[] args) {
 		LocalTest test = new LocalTest();
 		test.init();
-		test.test();
+		test.testWite();
 		
 		
 
