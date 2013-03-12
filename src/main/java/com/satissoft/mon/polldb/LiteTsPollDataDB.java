@@ -88,12 +88,12 @@ public class LiteTsPollDataDB implements PollDataDB {
 			return makeErrorResult(data.size(),new PollDataDBException("No available connections!"));
 		}
 		try {
-			return w.conn.write(data, timeout, unit);
+			 StoreResults res = w.conn.write(data, timeout, unit);
+			 p.release(w);
+			 return res;
 		} catch (Exception e) {
+			p.destroy(w);
 			return makeErrorResult(data.size(),e);
-		}
-		finally{
-			p.release(w);
 		}
 	}
     private StoreResults makeErrorResult(int size,Throwable error){
@@ -118,12 +118,12 @@ public class LiteTsPollDataDB implements PollDataDB {
 			throw new PollDataDBException("No available connections!");
 		}
 		try {
-			return w.conn.read(from, to, timeout, unit);
-		} catch (Exception e) {
-			throw new PollDataDBException("Runtime error",e);
-		}
-		finally{
+			List<? extends PollData> res =  w.conn.read(from, to, timeout, unit);
 			p.release(w);
+			return res;
+		} catch (Exception e) {
+			p.destroy(w);
+			throw new PollDataDBException("Runtime error",e);
 		}
 	}
 
@@ -167,11 +167,21 @@ public class LiteTsPollDataDB implements PollDataDB {
 					if(conn==null){
 						conn = new ConnectionWrapper(host, port);
 					}
+					else if((System.currentTimeMillis()-conn.lastAccsessTime)>liveTime){
+						conn.conn.close();
+						conn = new ConnectionWrapper(host, port);
+					}
 					conn.lastAccsessTime = System.currentTimeMillis();
 					count++;
 					return conn;
 				}
 			}
+		}
+		public void destroy(ConnectionWrapper conn){
+			synchronized (this){
+				count--;
+			}
+			conn.conn.close();
 		}
 		public void release(ConnectionWrapper conn){
 			synchronized (this){
