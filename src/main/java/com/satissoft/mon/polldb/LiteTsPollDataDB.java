@@ -9,8 +9,13 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
-public class LiteTsPollDataDB implements PollDataDB {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+
+
+public class LiteTsPollDataDB implements PollDataDB {
+	private static Logger log = LoggerFactory.getLogger(LiteTsPollDataDB.class);
 	private int cursor = 0;
 	private RoundRobinPool pool[];
 	private int concurentCounnections;
@@ -71,28 +76,55 @@ public class LiteTsPollDataDB implements PollDataDB {
 		}
 		return pool[index];
 	}
+	private class PolledConnection{
+		RoundRobinPool pool = null;
+		ConnectionWrapper w = null;
+		
+		public PolledConnection(RoundRobinPool pool, ConnectionWrapper w) {
+			super();
+			this.pool = pool;
+			this.w = w;
+		}
+
+		LiteTsPollDBSockConnection connection(){
+			return w.conn;
+		}
+		public void release(){
+			pool.release(w);
+		}
+		public void destroy(){
+			pool.destroy(w);
+		}
+	}
+	
+	private PolledConnection getNextPolledConnection() throws PollDataDBException{
+		for(int i = 0 ; i < pool.length ; i++){
+			RoundRobinPool pool = getPoll();
+			ConnectionWrapper w = pool.getConnection();
+			if(w!=null){
+				return new PolledConnection(pool,w);
+			}
+		}
+		log.error("No database instance available");
+		throw new PollDataDBException("No database instance available");
+	}
 	public StoreResults stote(List<? extends PollData> data, long timeout,
 			TimeUnit unit) {
 		if(isClosed){
 			return makeErrorResult(data.size(),new PollDataDBException("DB is closed!"));
 		}
-		RoundRobinPool p = getPoll();
-		ConnectionWrapper w;
+		PolledConnection conn;
 		try {
-			w = p.getConnection();
-		} catch (IOException e) {
-			e.printStackTrace();
-			return makeErrorResult(data.size(),new PollDataDBException("Can't connect to db",e));
-		}
-		if(w==null){
-			return makeErrorResult(data.size(),new PollDataDBException("No available connections!"));
+			conn = getNextPolledConnection();
+		} catch (PollDataDBException e1) {
+			return makeErrorResult(data.size(),e1);
 		}
 		try {
-			 StoreResults res = w.conn.write(data, timeout, unit);
-			 p.release(w);
+			 StoreResults res = conn.connection().write(data, timeout, unit);
+			 conn.release();
 			 return res;
 		} catch (Exception e) {
-			p.destroy(w);
+			conn.destroy();
 			return makeErrorResult(data.size(),e);
 		}
 	}
@@ -106,23 +138,18 @@ public class LiteTsPollDataDB implements PollDataDB {
 		if(isClosed){
 			throw new PollDataDBException("DB is closed!");
 		}
-		RoundRobinPool p = getPoll();
-		ConnectionWrapper w;
+		PolledConnection conn;
 		try {
-			w = p.getConnection();
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new PollDataDBException("Can't connect to db",e);
-		}
-		if(w==null){
-			throw new PollDataDBException("No available connections!");
+			conn = getNextPolledConnection();
+		} catch (PollDataDBException e1) {
+			throw e1;
 		}
 		try {
-			List<? extends PollData> res =  w.conn.read(from, to, timeout, unit);
-			p.release(w);
+			List<? extends PollData> res =   conn.connection().read(from, to, timeout, unit);
+			conn.release();
 			return res;
 		} catch (Exception e) {
-			p.destroy(w);
+			conn.destroy();
 			throw new PollDataDBException("Runtime error",e);
 		}
 	}
@@ -149,28 +176,48 @@ public class LiteTsPollDataDB implements PollDataDB {
 		LinkedList<ConnectionWrapper> conenctions = new LinkedList<ConnectionWrapper>();
 		int count = 0;
 		boolean isClosed = false;
+		private long unvailableScince = 0;
 		public RoundRobinPool(String host, int port) {
 			super();
 			this.host = host;
 			this.port = port;
 		}
-		public ConnectionWrapper getConnection() throws IOException{
+		public ConnectionWrapper getConnection(){
+			if((System.currentTimeMillis()-unvailableScince)<30000){
+				return null;
+			}
 			synchronized (this) {
 				if(isClosed){
 					return null;
 				}
 				if(count>=concurentCounnections){
+					log.error("No availbale connections to "+host+":"+port);
 					return null;
 				}
 				else{
 					ConnectionWrapper conn = conenctions.poll();
 					if(conn==null){
-						conn = new ConnectionWrapper(host, port);
+						try {
+							conn = new ConnectionWrapper(host, port);
+						} catch (IOException e) {
+							e.printStackTrace();
+							log.error("Can't connect to "+host+":"+port);
+							unvailableScince = System.currentTimeMillis();
+							return null;
+						}
 					}
 					else if((System.currentTimeMillis()-conn.lastAccsessTime)>liveTime){
 						conn.conn.close();
-						conn = new ConnectionWrapper(host, port);
+						try {
+							conn = new ConnectionWrapper(host, port);
+						} catch (IOException e) {
+							e.printStackTrace();
+							unvailableScince = System.currentTimeMillis();
+							log.error("Can't connect to "+host+":"+port);
+							return null;
+						}
 					}
+					unvailableScince = 0;
 					conn.lastAccsessTime = System.currentTimeMillis();
 					count++;
 					return conn;

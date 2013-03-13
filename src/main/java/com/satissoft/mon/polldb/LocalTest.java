@@ -20,7 +20,8 @@ public class LocalTest {
 	public static void main(String[] args) {
 		LocalTest test = new LocalTest();
 		test.init();
-		test.testWite();
+		
+		test.writeOne();
 		
 		
 
@@ -176,6 +177,35 @@ public class LocalTest {
 		}
 		datas = new ArrayList<SimplePollData>();
 		count = 0;
+
+		PollDataDBFactory.getFactory().close();
+	}
+
+	public void writeOne() {
+		List<SimplePollData> datas;
+		try {
+			if (PollDataDBFactory.getFactory() == null) {
+				System.err.println("Why null");
+				System.exit(-1);
+			}
+			long tin = System.currentTimeMillis()-86400000*5-10;
+			while (true) {
+				datas = new ArrayList<SimplePollData>();
+				for (long t = 0; t < 10; t++) {
+					SimplePollData d = new SimplePollData(t,
+							tin, 0, "test");
+					datas.add(d);
+					tin++;
+				}
+				PollDataDBFactory.getFactory()
+						.stote(datas, 1, TimeUnit.MINUTES);
+				Thread.currentThread().sleep(1000l);
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 
 		PollDataDBFactory.getFactory().close();
 	}
