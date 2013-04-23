@@ -6,21 +6,20 @@
 	<version>0.0.1-SNAPSHOT</version>
 
 	<scm>
-		<connection>scm:git:ssh://git@127.0.0.1:3434/SatisSoft/PollDataDB.git</connection>
-		<developerConnection>scm:git:ssh://git@127.0.0.1:3434/SatisSoft/PollDataDB</developerConnection>
+		<connection>scm:git:ssh://git@github.com/SatisSoft/PollDataDB.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/SatisSoft/PollDataDB</developerConnection>
 		<url>http://github.com/SatisSoft/PollDataDB</url>
 	</scm>
-
 	<distributionManagement>
 		<snapshotRepository>
-			<id>sonatype-nexus-snapshots</id>
+			<id>snapshots</id>
 			<name>Sonatype Nexus Snapshots</name>
-			<url>http://oss.sonatype.org/content/repositories/snapshots</url>
+			<url>http://satissoft.ru:8081/nexus/content/repositories/snapshots</url>
 		</snapshotRepository>
 		<repository>
-			<id>sonatype-nexus-staging</id>
+			<id>releases</id>
 			<name>Nexus Release Repository</name>
-			<url>http://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+			<url>http://satissoft.ru:8081/nexus/content/repositories/releases</url>
 		</repository>
 	</distributionManagement>
 
