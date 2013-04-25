@@ -28,6 +28,7 @@
 			<groupId>org.fusesource.leveldbjni</groupId>
 			<artifactId>leveldbjni-all</artifactId>
 			<version>1.5</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
@@ -38,6 +39,7 @@
 			<groupId>me.prettyprint</groupId>
 			<artifactId>hector-core</artifactId>
 			<version>1.0-5</version>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 
