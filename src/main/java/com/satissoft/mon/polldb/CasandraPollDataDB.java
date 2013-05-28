@@ -1,6 +1,7 @@
 package com.satissoft.mon.polldb;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -116,6 +117,9 @@ public class CasandraPollDataDB implements PollDataDB {
 		ByteBuffer buff = ByteBuffer.allocate(8);
 		buff.putLong(time);
 		return buff.array();
+	}
+	public List<SimpleStats>  eventsStat(int type,long id,long from,long to,long timeout,TimeUnit unit) throws PollDataDBException{
+		return new ArrayList<SimpleStats>();
 	}
 	
 }

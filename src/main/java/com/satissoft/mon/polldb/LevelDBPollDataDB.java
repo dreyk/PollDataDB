@@ -155,4 +155,7 @@ public class LevelDBPollDataDB implements PollDataDB {
 		ring.close();
 	}
 
+	public List<SimpleStats>  eventsStat(int type,long id,long from,long to,long timeout,TimeUnit unit) throws PollDataDBException{
+		return new ArrayList<SimpleStats>();
+	}
 }

@@ -19,6 +19,7 @@ public class LiteTsPollDBSockConnection{
 	private final static byte STORE_REQ = 1;
 	private final static byte SCAN_REQ= 2;
 	private final static byte PING_REQ= 3;
+	private final static byte EVENTS_REQ= 4;
 
 
 	private final static byte OK_RESP = 0;
@@ -175,6 +176,51 @@ public class LiteTsPollDBSockConnection{
 			}
 			res.add((PollData)from.initLevelDb(key, body));
 			readed+=(dataSize+20);
+		}
+		return res;
+		
+	}
+	public List<SimpleStats>  eventsStat(int type,long id,long from,long to,long timeout,TimeUnit unit) throws PollDataDBException {
+		try {
+			dout.writeInt(1+8*3+4);
+			dout.write(EVENTS_REQ);
+			dout.writeLong(id);
+			dout.writeLong(from);
+			dout.writeLong(to);
+			dout.writeInt(type);
+			dout.flush();
+			
+			//skip first 4 bytes
+			din.readInt();
+			int respSize = din.readInt();
+			if(respSize<1){
+				exitAndThrow("Bad response");
+			}
+			byte code = din.readByte();
+			switch (code) {
+			case OK_RESP:
+				return  readStatResults(respSize-1);
+			case RUNTIME_ERROR_RESP:
+				exitOnRuntimeError(respSize-1);
+				break;
+			default:
+				exitAndThrow("UNKNOWN response code "+code);
+				break;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			exitAndThrow("Can't write/read data to",e);
+		}
+		return null;
+	}
+	private  List<SimpleStats> readStatResults(int size) throws PollDataDBException,IOException{
+		int readed = 0;
+		List<SimpleStats>res = new ArrayList<SimpleStats>();
+		while(readed<size){
+			long time = din.readLong();
+			int state = din.readInt();
+			res.add(new SimpleStats(time, state));
+			readed+=12;
 		}
 		return res;
 		
