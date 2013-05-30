@@ -158,4 +158,7 @@ public class LevelDBPollDataDB implements PollDataDB {
 	public List<SimpleStats>  eventsStat(int type,long id,long from,long to,long timeout,TimeUnit unit) throws PollDataDBException{
 		return new ArrayList<SimpleStats>();
 	}
+	public List<SimpleEvent>  events(long id,long from,long to,long timeout,TimeUnit unit) throws PollDataDBException{
+		return new ArrayList<SimpleEvent>();
+	}
 }

@@ -174,6 +174,25 @@ public class LiteTsPollDataDB implements PollDataDB {
 			throw new PollDataDBException("Runtime error",e);
 		}
 	}
+	public List<SimpleEvent>  events(long id,long from,long to,long timeout,TimeUnit unit) throws PollDataDBException{
+		if(isClosed){
+			throw new PollDataDBException("DB is closed!");
+		}
+		PolledConnection conn;
+		try {
+			conn = getNextPolledConnection();
+		} catch (PollDataDBException e1) {
+			throw e1;
+		}
+		try {
+			List<SimpleEvent> res =   conn.connection().events(id,from,to, timeout, unit);
+			conn.release();
+			return res;
+		} catch (Exception e) {
+			conn.destroy();
+			throw new PollDataDBException("Runtime error",e);
+		}
+	}
 	public void close() {
 		timer.cancel();
 		isClosed = true;

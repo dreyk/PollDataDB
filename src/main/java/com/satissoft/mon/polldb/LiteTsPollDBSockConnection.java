@@ -19,7 +19,8 @@ public class LiteTsPollDBSockConnection{
 	private final static byte STORE_REQ = 1;
 	private final static byte SCAN_REQ= 2;
 	private final static byte PING_REQ= 3;
-	private final static byte EVENTS_REQ= 4;
+	private final static byte EVENTS_STAT_REQ= 4;
+	private final static byte EVENTS_REQ= 5;
 
 
 	private final static byte OK_RESP = 0;
@@ -183,7 +184,7 @@ public class LiteTsPollDBSockConnection{
 	public List<SimpleStats>  eventsStat(int type,long id,long from,long to,long timeout,TimeUnit unit) throws PollDataDBException {
 		try {
 			dout.writeInt(1+8*3+4);
-			dout.write(EVENTS_REQ);
+			dout.write(EVENTS_STAT_REQ);
 			dout.writeLong(id);
 			dout.writeLong(from);
 			dout.writeLong(to);
@@ -212,6 +213,55 @@ public class LiteTsPollDBSockConnection{
 			exitAndThrow("Can't write/read data to",e);
 		}
 		return null;
+	}
+	public List<SimpleEvent>  events(long id,long from,long to,long timeout,TimeUnit unit) throws PollDataDBException{
+		try {
+			dout.writeInt(1+8*3+4);
+			dout.write(EVENTS_REQ);
+			dout.writeLong(id);
+			dout.writeLong(from);
+			dout.writeLong(to);
+			dout.flush();
+			
+			//skip first 4 bytes
+			din.readInt();
+			int respSize = din.readInt();
+			if(respSize<1){
+				exitAndThrow("Bad response");
+			}
+			byte code = din.readByte();
+			switch (code) {
+			case OK_RESP:
+				return  readEventsResults(respSize-1);
+			case RUNTIME_ERROR_RESP:
+				exitOnRuntimeError(respSize-1);
+				break;
+			default:
+				exitAndThrow("UNKNOWN response code "+code);
+				break;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			exitAndThrow("Can't write/read data to",e);
+		}
+		return null;
+	}
+	private  List<SimpleEvent> readEventsResults(int size) throws PollDataDBException,IOException{
+		int readed = 0;
+		List<SimpleEvent>res = new ArrayList<SimpleEvent>();
+		while(readed<size){
+			//<<Up:64/integer,Down:64/integer,Param:64/integer,St:32/integer,S:32/integer,IsAlarm:8/integer>>
+			long up= din.readLong();
+			long down= din.readLong();
+			long param = din.readLong();
+			int status = din.readInt();
+			int severity = din.readInt();
+			int isAlarm = (int)din.readByte();
+			res.add(new SimpleEvent(up, down, param, severity, status, isAlarm==1?true:false));
+			readed+=12;
+		}
+		return res;
+		
 	}
 	private  List<SimpleStats> readStatResults(int size) throws PollDataDBException,IOException{
 		int readed = 0;
