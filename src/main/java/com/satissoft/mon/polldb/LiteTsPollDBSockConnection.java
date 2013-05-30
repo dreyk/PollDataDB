@@ -216,7 +216,7 @@ public class LiteTsPollDBSockConnection{
 	}
 	public List<SimpleEvent>  events(long id,long from,long to,long timeout,TimeUnit unit) throws PollDataDBException{
 		try {
-			dout.writeInt(1+8*3+4);
+			dout.writeInt(1+8*3);
 			dout.write(EVENTS_REQ);
 			dout.writeLong(id);
 			dout.writeLong(from);
