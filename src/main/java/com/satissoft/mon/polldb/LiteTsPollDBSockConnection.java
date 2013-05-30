@@ -258,7 +258,7 @@ public class LiteTsPollDBSockConnection{
 			int severity = din.readInt();
 			int isAlarm = (int)din.readByte();
 			res.add(new SimpleEvent(up, down, param, severity, status, isAlarm==1?true:false));
-			readed+=12;
+			readed+=(8*3+4*2+1);
 		}
 		return res;
 		
