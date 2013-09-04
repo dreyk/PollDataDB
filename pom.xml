@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.satissoft.mon</groupId>
 	<artifactId>PollDataDB</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.2</version>
 
 	<scm>
 		<connection>scm:git:ssh://git@github.com/SatisSoft/PollDataDB.git</connection>
