@@ -6,9 +6,9 @@
 	<version>1.0.2</version>
 
 	<scm>
-		<connection>scm:git:ssh://git@github.com/SatisSoft/PollDataDB.git</connection>
-		<developerConnection>scm:git:ssh://git@github.com/SatisSoft/PollDataDB</developerConnection>
-		<url>http://github.com/SatisSoft/PollDataDB</url>
+		<connection>scm:git:ssh://git@github.com/dreyk/PollDataDB.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/dreyk/PollDataDB.git</developerConnection>
+		<url>http://github.com/dreyk/PollDataDB</url>
 	</scm>
 	<dependencies>
 		<dependency>

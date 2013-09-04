@@ -20,7 +20,7 @@ public class PerformanceTest {
 	/**
 	 * @param args
 	 */
-	/*public static void main(String[] args) {
+	public static void main(String[] args) {
 		PerformanceTest test = new PerformanceTest();
 		test.init(args[0]);
 		test.test();
@@ -42,21 +42,23 @@ public class PerformanceTest {
 		}
 	
 	}
-	int wWorkersCount = 10;
+	int workersCount = 10;
 	int batchSize = 700;
+	long readTime = 1;
+	String dataPrefix = "test";
 	long testime = 10;
 	long repInterval = 10;
 	private  AtomicLong opsW = new AtomicLong(0);
 	private  AtomicLong opsR = new AtomicLong(0);
 	private long repStart = 0;
 	public void test(){
-		final CountDownLatch writersBar = new CountDownLatch(wWorkersCount);
-		for(int i = 0 ; i < wWorkersCount ; i++){
+		final CountDownLatch bar = new CountDownLatch(workersCount);
+		for(int i = 0 ; i < workersCount ; i++){
 			final long dev = i;
 			Thread t = new Thread(new Runnable() {
 				public void run() {
 					write(dev);
-					writersBar.countDown();
+					bar.countDown();
 				}
 			});
 			t.start();
@@ -78,7 +80,7 @@ public class PerformanceTest {
 			}
 		}, repInterval*1000,repInterval*1000);
 		try {
-			l.await();
+			bar.await();
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -89,47 +91,31 @@ public class PerformanceTest {
 	
 	
 	public void write(long id) {
-		Long start = System.currentTimeMillis();
-		int count = 1;
-		while ((System.currentTimeMillis() - start) < testime * 1000l * 60l) {
-			if (count == readOn) {
-				List<SimplePollData> l =  null;
-				try {
-					l = (List<SimplePollData>)PollDataDBFactory.getFactory().read(new SimplePollData(id,start,0,null),new SimplePollData(id,System.currentTimeMillis(),0,null), 1,TimeUnit.MINUTES);
-					opsR.getAndAdd(l.size());
-				} catch (PollDataDBException e) {
-					e.printStackTrace();
-				}
-				if(l.size()<1){
-					System.err.println("Read bad count! ");
-				}
-				count = 0;
-
-			} else {
-				List<SimplePollData> datas = new ArrayList<SimplePollData>();
-				for (long i = id; i < id + device; i++) {
-					SimplePollData d = new SimplePollData(i,
-							System.currentTimeMillis(), 0, "test");
-					datas.add(d);
-
-				}
-				StoreResults wr = PollDataDBFactory.getFactory().stote(datas,
-						1, TimeUnit.MINUTES);
-				if (wr.getCount() != device) {
-					System.err.println("Write bad count! " + wr);
-				}
-				else{
-					opsW.getAndAdd(device);
-				}
-				try {
-					Thread.currentThread().sleep(100);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				count++;
+		String src = dataPrefix+id;
+		long start = System.currentTimeMillis();
+		int count = 0;
+		long to= start+testime*1000l*60l;
+		for(long t = start;t<to;t+=batchSize){
+			List<SimplePollData> datas = new ArrayList<SimplePollData>(batchSize);
+			for(long i = t;i<batchSize;i++){
+				SimplePollData d = new SimplePollData(src,i,dataPrefix+id+i);
+				datas.add(d);
+			}
+			StoreResults wr = PollDataDBFactory.getFactory().stote(datas,
+					1, TimeUnit.MINUTES);
+			if (wr.getErrorCount()>0) {
+				System.err.println("Write errors! " + wr.getErrorCount());
+			}
+			else{
+				opsW.getAndAdd(batchSize);
+			}
+			try {
+				List<SimplePollData> l = (List<SimplePollData>)PollDataDBFactory.getFactory().read(new SimplePollData(src,t-readTime*1000*60,null),new SimplePollData(src,t,null), 1,TimeUnit.MINUTES);
+				opsR.getAndAdd(1);
+			} catch (PollDataDBException e) {
+				e.printStackTrace();
 			}
 		}
-	}*/
+	}
 
 }

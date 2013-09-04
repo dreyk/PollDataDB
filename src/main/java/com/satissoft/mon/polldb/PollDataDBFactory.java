@@ -9,7 +9,7 @@ public class PollDataDBFactory {
 			return db;
 		}
 	}
-	public static void init(Class clazz,Properties properties){
+	public static void init(@SuppressWarnings("rawtypes") Class clazz,Properties properties){
 		synchronized(PollDataDBFactory.class){
 			if(clazz.getName().equals(LiteTsPollDataDB.class.getName())){
 				db = new LiteTsPollDataDB(properties);
