@@ -1,4 +1,4 @@
-package com.satissoft.mon.polldb;
+package test;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -11,56 +11,52 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.satissoft.mon.polldb.PollDataDBException;
+import com.satissoft.mon.polldb.PollDataDBFactory;
+import com.satissoft.mon.polldb.StoreResults;
+
+
 public class PerformanceTest {
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	/*public static void main(String[] args) {
 		PerformanceTest test = new PerformanceTest();
 		test.init(args[0]);
 		test.test();
-		
-		
-
 	}
 
 	public void init(String file){
 		Properties p = new Properties();
-		//p.
 		try {
 			InputStream in  = new FileInputStream(file);
 			p.load(in);
 			in.close();
-			//p.put("clazz", "com.satissoft.mon.polldb.CasandraPollDataDB");
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		try {
 			PollDataDBFactory.init(Class.forName(p.getProperty("clazz")), p);
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	
 	}
-	int controlers = 10;
-	int readOn = 8;
-	int device = 700;
+	int wWorkersCount = 10;
+	int batchSize = 700;
 	long testime = 10;
 	long repInterval = 10;
 	private  AtomicLong opsW = new AtomicLong(0);
 	private  AtomicLong opsR = new AtomicLong(0);
 	private long repStart = 0;
 	public void test(){
-		final CountDownLatch l = new CountDownLatch(controlers);
-		for(int i = 0 ; i < controlers ; i++){
-			final long dev = i*device;
+		final CountDownLatch writersBar = new CountDownLatch(wWorkersCount);
+		for(int i = 0 ; i < wWorkersCount ; i++){
+			final long dev = i;
 			Thread t = new Thread(new Runnable() {
-				
 				public void run() {
 					write(dev);
-					l.countDown();
+					writersBar.countDown();
 				}
 			});
 			t.start();
@@ -68,7 +64,6 @@ public class PerformanceTest {
 		final Timer report = new Timer();
 		repStart = System.currentTimeMillis();
 		report.schedule(new TimerTask() {
-			
 			@Override
 			public void run() {
 				long w = opsW.getAndSet(0);
@@ -126,9 +121,15 @@ public class PerformanceTest {
 				else{
 					opsW.getAndAdd(device);
 				}
+				try {
+					Thread.currentThread().sleep(100);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				count++;
 			}
 		}
-	}
+	}*/
 
 }

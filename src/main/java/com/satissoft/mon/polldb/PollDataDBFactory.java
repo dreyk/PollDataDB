@@ -11,13 +11,7 @@ public class PollDataDBFactory {
 	}
 	public static void init(Class clazz,Properties properties){
 		synchronized(PollDataDBFactory.class){
-			if(clazz.getName().equals(LevelDBPollDataDB.class.getName())){
-				db = new LevelDBPollDataDB(properties);
-			}
-			else if(clazz.getName().equals(CasandraPollDataDB.class.getName())){
-				db = new CasandraPollDataDB();
-			}
-			else if(clazz.getName().equals(LiteTsPollDataDB.class.getName())){
+			if(clazz.getName().equals(LiteTsPollDataDB.class.getName())){
 				db = new LiteTsPollDataDB(properties);
 			}
 		}

@@ -1,6 +1,9 @@
-package com.satissoft.mon.polldb;
+package test;
 
 import java.nio.ByteBuffer;
+
+import com.satissoft.mon.polldb.LevelDBKV;
+import com.satissoft.mon.polldb.PollData;
 
 public class SimplePollData implements PollData{
 	public LevelDBKV initLevelDb(byte[] key, byte[] data) {
