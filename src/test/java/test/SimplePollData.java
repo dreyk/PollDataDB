@@ -19,8 +19,8 @@ public class SimplePollData implements PollData{
 		return i;
 	}
 	public byte[] getLevelDBKey() {
-		ByteBuffer buffer = ByteBuffer.allocate(16);
 		byte k[] = id.getBytes();
+		ByteBuffer buffer = ByteBuffer.allocate(8+1+k.length);
 		buffer.put((byte)k.length);
 		buffer.put(k);
 		buffer.putLong(time);

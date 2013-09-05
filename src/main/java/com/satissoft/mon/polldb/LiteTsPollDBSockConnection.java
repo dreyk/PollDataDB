@@ -49,7 +49,7 @@ public class LiteTsPollDBSockConnection{
 	public  StoreResults write(List<? extends PollData> datas,long timeout,TimeUnit unit) throws PollDataDBException{
 		int batchSize = 1;
 		for(PollData d:datas){
-			batchSize+=(d.getLevelDBValue().length+20);
+			batchSize+=(d.getLevelDBValue().length+d.getLevelDBKey().length+4);
 		}
 		try {
 			dout.writeInt(batchSize);
@@ -57,8 +57,7 @@ public class LiteTsPollDBSockConnection{
 			for(PollData d:datas){
 				byte value[] = d.getLevelDBValue();
 				dout.writeInt(value.length);
-				dout.writeLong((Long)d.getComparableId());
-				dout.writeLong(d.getTime());
+				dout.write(d.getLevelDBKey());
 				dout.write(value);
 			}
 			dout.flush();
@@ -106,11 +105,12 @@ public class LiteTsPollDBSockConnection{
 	public List<? extends PollData> read(PollData from, PollData to,
 			long timeout, TimeUnit unit) throws PollDataDBException {
 		try {
-			dout.writeInt(1+8*3);
+			byte fromKey[] = from.getLevelDBKey();
+			byte toKey[] = to.getLevelDBKey();
+			dout.writeInt(1+fromKey.length+toKey.length);
 			dout.write(SCAN_REQ);
-			dout.writeLong((Long)from.getComparableId());
-			dout.writeLong(from.getTime());
-			dout.writeLong(to.getTime());
+			dout.write(fromKey);
+			dout.write(toKey);
 			dout.flush();
 			
 			//skip first 4 bytes
@@ -141,14 +141,15 @@ public class LiteTsPollDBSockConnection{
 		List<PollData>res = new ArrayList<PollData>();
 		while(readed<size){
 			int dataSize = din.readInt();
-			byte key[] = new byte[16];
+			int keySize = (int)din.read()+8;
+			byte key[] = new byte[keySize];
 			din.readFully(key);
 			byte body[] = new byte[dataSize];
 			if(dataSize>0){
 				din.readFully(body);
 			}
 			res.add((PollData)from.initLevelDb(key, body));
-			readed+=(dataSize+20);
+			readed+=(dataSize+keySize+1);
 		}
 		return res;
 		
