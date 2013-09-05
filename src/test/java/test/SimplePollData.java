@@ -9,8 +9,7 @@ public class SimplePollData implements PollData{
 	public LevelDBKV initLevelDb(byte[] key, byte[] data) {
 		SimplePollData i = new SimplePollData();
 		ByteBuffer buffer = ByteBuffer.wrap(key);
-		int kl = (int)buffer.get();
-		byte kb[] = new byte[kl];
+		byte kb[] = new byte[key.length-8];
 		buffer.get(kb);
 		i.setId(new String(kb));
 		i.setTime(buffer.getLong());
@@ -20,18 +19,15 @@ public class SimplePollData implements PollData{
 	}
 	public byte[] getLevelDBKey() {
 		byte k[] = id.getBytes();
-		ByteBuffer buffer = ByteBuffer.allocate(8+1+k.length);
-		buffer.put((byte)k.length);
+		ByteBuffer buffer = ByteBuffer.allocate(8+k.length);
 		buffer.put(k);
 		buffer.putLong(time);
 		return buffer.array();
 	}
 	public byte[] getLevelDBValue() {
-		ByteBuffer buffer = ByteBuffer.allocate(4+(value==null?0:value.length()));
+		ByteBuffer buffer = ByteBuffer.allocate(value==null?0:value.length());
 		if(value!=null)
 			buffer.put(value.getBytes());
-		else
-			buffer.putInt(-1);
 		return buffer.array();
 	}
 	String id;

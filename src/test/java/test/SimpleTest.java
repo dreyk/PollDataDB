@@ -110,12 +110,12 @@ public class SimpleTest {
 			else{
 				opsW.getAndAdd(batchSize);
 			}
-			try {
+			/*try {
 				List<SimplePollData> l = (List<SimplePollData>)PollDataDBFactory.getFactory().read(new SimplePollData(src,t-readTime*1000*60,null),new SimplePollData(src,t,null), 1,TimeUnit.MINUTES);
 				opsR.getAndAdd(1);
 			} catch (PollDataDBException e) {
 				e.printStackTrace();
-			}
+			}*/
 		}
 	}
 

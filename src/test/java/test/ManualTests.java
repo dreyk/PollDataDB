@@ -30,34 +30,34 @@ public class ManualTests {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		PollDataDB db = null;
 		try {
 			PollDataDBFactory.init(Class.forName(p.getProperty("clazz")), p);
-			PollDataDB db = PollDataDBFactory.getFactory();
+			db = PollDataDBFactory.getFactory();
 			List<SimplePollData> data = new ArrayList<SimplePollData>();
 			long c = 0;
 			long summ = 0;
 			long now = System.currentTimeMillis();
-			for(long day = 0 ; day < 5 ; day++){
-				for(long m = 0 ; m < 24l*60l ; m+=5){
-					SimplePollData d = new SimplePollData(id,now-(day*24l*60l+m)*60l*1000l,Long.toString(c));
+			for(long m = 0 ; m < 5l*24l*60l ; m+=5){
+					SimplePollData d = new SimplePollData(id,now-m*60l*1000l,Long.toString(c));
 					data.add(d);
-					summ=+c;
+					summ+=c;
 					c++;
-					
-				}
 			}
-			StoreResults res = db.stote(data,1,TimeUnit.MINUTES);
-			System.out.println("count "+res.getCount()+" error "+res.getErrorCount());
+			db.stote(data,1,TimeUnit.MINUTES);
+			
 			long start= System.currentTimeMillis();
-			List<SimplePollData> poll = (List<SimplePollData>)db.read(new SimplePollData(id,now-5*24l*60l*60l*1000l,Long.toString(c)),new SimplePollData(id,now,Long.toString(c)), 1,TimeUnit.MINUTES);
+			List<SimplePollData> poll = (List<SimplePollData>)db.read(new SimplePollData(id,0l,Long.toString(c)),new SimplePollData(id,now,Long.toString(c)), 1,TimeUnit.MINUTES);
 			for(int i = 0 ; i < poll.size() ; i++){
 				String sc = poll.get(i).getValue();
 				summ -= Long.parseLong(sc);
 			}
-			System.out.println("check "+summ+" time "+(System.currentTimeMillis()-start));
+			System.out.println("size "+poll.size()+" check "+summ+" time "+(System.currentTimeMillis()-start));
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		db.close();
 	}
 
 }

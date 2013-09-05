@@ -49,15 +49,17 @@ public class LiteTsPollDBSockConnection{
 	public  StoreResults write(List<? extends PollData> datas,long timeout,TimeUnit unit) throws PollDataDBException{
 		int batchSize = 1;
 		for(PollData d:datas){
-			batchSize+=(d.getLevelDBValue().length+d.getLevelDBKey().length+4);
+			batchSize+=(d.getLevelDBValue().length+d.getLevelDBKey().length+5);
 		}
 		try {
 			dout.writeInt(batchSize);
 			dout.write(STORE_REQ);
 			for(PollData d:datas){
 				byte value[] = d.getLevelDBValue();
+				byte key[] = d.getLevelDBKey();
+				dout.write((byte)key.length);
+				dout.write(key);
 				dout.writeInt(value.length);
-				dout.write(d.getLevelDBKey());
 				dout.write(value);
 			}
 			dout.flush();
@@ -107,9 +109,11 @@ public class LiteTsPollDBSockConnection{
 		try {
 			byte fromKey[] = from.getLevelDBKey();
 			byte toKey[] = to.getLevelDBKey();
-			dout.writeInt(1+fromKey.length+toKey.length);
+			dout.writeInt(1+fromKey.length+toKey.length+2);
 			dout.write(SCAN_REQ);
+			dout.write((byte)fromKey.length);
 			dout.write(fromKey);
+			dout.write((byte)toKey.length);
 			dout.write(toKey);
 			dout.flush();
 			
@@ -140,16 +144,16 @@ public class LiteTsPollDBSockConnection{
 		int readed = 0;
 		List<PollData>res = new ArrayList<PollData>();
 		while(readed<size){
-			int dataSize = din.readInt();
-			int keySize = (int)din.read()+8;
+			int keySize = (int)din.read();
 			byte key[] = new byte[keySize];
 			din.readFully(key);
+			int dataSize = din.readInt();
 			byte body[] = new byte[dataSize];
 			if(dataSize>0){
 				din.readFully(body);
 			}
 			res.add((PollData)from.initLevelDb(key, body));
-			readed+=(dataSize+keySize+1);
+			readed+=(dataSize+keySize+5);
 		}
 		return res;
 		
