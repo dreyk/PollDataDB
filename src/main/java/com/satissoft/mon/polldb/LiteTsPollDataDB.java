@@ -108,24 +108,26 @@ public class LiteTsPollDataDB implements PollDataDB {
 		log.error("No database instance available");
 		throw new PollDataDBException("No database instance available");
 	}
-	public StoreResults stote(List<? extends PollData> data, long timeout,
-			TimeUnit unit) {
+	public void stote(List<? extends PollData> data, long timeout,
+			TimeUnit unit) throws PollDataDBException {
 		if(isClosed){
-			return makeErrorResult(data.size(),new PollDataDBException("DB is closed!"));
+			throw new PollDataDBException("DB is closed!");
 		}
 		PolledConnection conn;
 		try {
 			conn = getNextPolledConnection();
 		} catch (PollDataDBException e1) {
-			return makeErrorResult(data.size(),e1);
+			throw e1;
 		}
 		try {
-			 StoreResults res = conn.connection().write(data, timeout, unit);
+			 conn.connection().write(data, timeout, unit);
 			 conn.release();
-			 return res;
-		} catch (Exception e) {
+		} catch (PollDataDBException e) {
 			conn.destroy();
-			return makeErrorResult(data.size(),e);
+			throw e;
+		} catch (Exception e1) {
+			conn.destroy();
+			throw new PollDataDBException("Runtime error",e1);
 		}
 	}
     private StoreResults makeErrorResult(int size,Throwable error){

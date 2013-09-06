@@ -24,7 +24,7 @@ public class SimpleTest {
 	int batchSize = 700;
 	long readTime = 1;
 	String dataPrefix = "test";
-	long testime = 10;
+	long testime = 1;
 	long repInterval = 10;
 	
 	public static void main(String[] args) {
@@ -44,6 +44,11 @@ public class SimpleTest {
 		}
 		try {
 			PollDataDBFactory.init(Class.forName(p.getProperty("clazz")), p);
+			workersCount = Integer.parseInt(p.getProperty("workers"));
+			batchSize = Integer.parseInt(p.getProperty("batchSize"));
+			testime = Integer.parseInt(p.getProperty("testTime"));
+			dataPrefix = p.getProperty("dataPrefix");
+			repInterval = Integer.parseInt(p.getProperty("reportTime"));
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
@@ -51,6 +56,8 @@ public class SimpleTest {
 	}
 	private  AtomicLong opsW = new AtomicLong(0);
 	private  AtomicLong opsR = new AtomicLong(0);
+	private  AtomicLong opsWE = new AtomicLong(0);
+	private  AtomicLong opsRE = new AtomicLong(0);
 	private long repStart = 0;
 	public void test(){
 		final CountDownLatch bar = new CountDownLatch(workersCount);
@@ -71,11 +78,15 @@ public class SimpleTest {
 			public void run() {
 				long w = opsW.getAndSet(0);
 				long r = opsR.getAndSet(0);
+				long we = opsWE.getAndSet(0);
+				long re = opsRE.getAndSet(0);
 				long time = System.currentTimeMillis();
 				long delta = time-repStart;
 				if(delta>0){
 					System.out.println("write ops/s "+w*1000l/delta);
 					System.out.println("read ops/s "+r*1000l/delta);
+					System.out.println("error write ops/s "+we*1000l/delta);
+					System.out.println("error read ops/s "+re*1000l/delta);
 				}
 				repStart = time;		
 			}
@@ -94,21 +105,22 @@ public class SimpleTest {
 	public void write(long id) {
 		String src = dataPrefix+id;
 		long start = System.currentTimeMillis();
-		int count = 0;
-		long to= start+testime*1000l*60l;
-		for(long t = start;t<to;t+=batchSize){
+		long count = 0;
+		long now = start;
+		while((now-start)<testime*1000l*60l){
 			List<SimplePollData> datas = new ArrayList<SimplePollData>(batchSize);
-			for(long i = t;i<batchSize;i++){
-				SimplePollData d = new SimplePollData(src,i,dataPrefix+id+i);
+			do{
+				SimplePollData d = new SimplePollData(src,start+count,dataPrefix+id+count);
 				datas.add(d);
-			}
-			StoreResults wr = PollDataDBFactory.getFactory().stote(datas,
-					1, TimeUnit.MINUTES);
-			if (wr.getErrorCount()>0) {
-				System.err.println("Write errors! " + wr.getErrorCount());
-			}
-			else{
+				count++;
+				
+			}while(count%batchSize!=0);
+			try {
+				PollDataDBFactory.getFactory().stote(datas,
+						1, TimeUnit.MINUTES);
 				opsW.getAndAdd(batchSize);
+			} catch (PollDataDBException e) {
+				opsWE.getAndAdd(batchSize);
 			}
 			/*try {
 				List<SimplePollData> l = (List<SimplePollData>)PollDataDBFactory.getFactory().read(new SimplePollData(src,t-readTime*1000*60,null),new SimplePollData(src,t,null), 1,TimeUnit.MINUTES);

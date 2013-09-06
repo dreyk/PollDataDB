@@ -46,7 +46,7 @@ public class LiteTsPollDBSockConnection{
 			e.printStackTrace();
 		}
 	}
-	public  StoreResults write(List<? extends PollData> datas,long timeout,TimeUnit unit) throws PollDataDBException{
+	public  void write(List<? extends PollData> datas,long timeout,TimeUnit unit) throws PollDataDBException{
 		int batchSize = 1;
 		for(PollData d:datas){
 			batchSize+=(d.getLevelDBValue().length+d.getLevelDBKey().length+5);
@@ -73,7 +73,7 @@ public class LiteTsPollDBSockConnection{
 			byte code = din.readByte();
 			switch (code) {
 			case OK_RESP:
-				return readStoreResults(respSize-1);
+				return;
 			case RUNTIME_ERROR_RESP:
 				exitOnRuntimeError(respSize-1);
 				break;
@@ -85,7 +85,6 @@ public class LiteTsPollDBSockConnection{
 			e.printStackTrace();
 			exitAndThrow("Can't write/read data to",e);
 		}
-		return null;
 	}
 	private StoreResults readStoreResults(int size) throws PollDataDBException,IOException{
 		if(size<64){
@@ -162,7 +161,7 @@ public class LiteTsPollDBSockConnection{
 	private void exitOnRuntimeError(int size) throws PollDataDBException,IOException{
 		byte message[] = new byte[size];
 		din.readFully(message);
-		exitAndThrow("R untime server error",new PollDataDBException(new String(message)));
+		exitAndThrow("Runtime server error",new PollDataDBException(new String(message)));
 	}
 	private void exitAndThrow(String message) throws PollDataDBException{
 		destory();
