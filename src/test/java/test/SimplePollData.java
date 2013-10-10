@@ -41,9 +41,6 @@ public class SimplePollData implements PollData{
         this.time = time;
         this.value = value;
     }
-    public Comparable getComparableId() {
-        return id;
-    }
     String value;
     public String getId() {
         return id;

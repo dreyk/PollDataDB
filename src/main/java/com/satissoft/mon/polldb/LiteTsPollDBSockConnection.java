@@ -12,17 +12,10 @@ import java.util.concurrent.TimeUnit;
 
 
 public class LiteTsPollDBSockConnection{
-    //private static Logger log = LoggerFactory.getLogger(LiteTsPollDBSockConnection.class);
     private final static byte STORE_REQ = 1;
     private final static byte SCAN_REQ= 2;
-
     private final static byte OK_RESP = 0;
-    //private final static byte UNKNOWN_REQ_RESP = 1;
-    //private final static byte UNKNOWN_DATA_RESP = 2;
     private final static byte RUNTIME_ERROR_RESP = 100;
-    
-    //private final static long pingTime = 5000l;
-    
     private Socket sock;
     private DataOutputStream dout;
     private DataInputStream din;

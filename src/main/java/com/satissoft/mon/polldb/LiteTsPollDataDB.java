@@ -19,7 +19,7 @@ public class LiteTsPollDataDB implements PollDataDB {
     private int cursor = 0;
     private RoundRobinPool pool[];
     private int concurentCounnections;
-    private boolean isClosed = false;
+    volatile private boolean isClosed = false;
     private long liveTime = 60l*1000l;
     private Timer timer;
     
@@ -171,8 +171,8 @@ public class LiteTsPollDataDB implements PollDataDB {
         String host;
         int port;
         LinkedList<ConnectionWrapper> conenctions = new LinkedList<ConnectionWrapper>();
-        int count = 0;
-        boolean isClosed = false;
+        volatile int count = 0;
+        volatile boolean isClosed = false;
         private long unvailableScince = 0;
         public RoundRobinPool(String host, int port) {
             super();
@@ -254,6 +254,7 @@ public class LiteTsPollDataDB implements PollDataDB {
                 while(it.hasNext()){
                     ConnectionWrapper w = it.next();
                     if((System.currentTimeMillis()-w.lastAccsessTime)>liveTime){
+                    	w.conn.close();
                         it.remove();
                     }
                 }

@@ -6,8 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+
+import com.satissoft.mon.polldb.LiteTsPollDataDB;
 import com.satissoft.mon.polldb.PollDataDB;
-import com.satissoft.mon.polldb.PollDataDBFactory;
 
 public class ManualTests {
 
@@ -30,8 +31,7 @@ public class ManualTests {
         }
         PollDataDB db = null;
         try {
-            PollDataDBFactory.init(Class.forName(p.getProperty("clazz")), p);
-            db = PollDataDBFactory.getFactory();
+            db = new LiteTsPollDataDB(p);
             List<SimplePollData> data = new ArrayList<SimplePollData>();
             long c = 0;
             long summ = 0;
@@ -45,6 +45,7 @@ public class ManualTests {
             db.stote(data,1,TimeUnit.MINUTES);
             
             long start= System.currentTimeMillis();
+            @SuppressWarnings("unchecked")
             List<SimplePollData> poll = (List<SimplePollData>)db.read(new SimplePollData(id,0l,Long.toString(c)),new SimplePollData(id,now,Long.toString(c)), 1,TimeUnit.MINUTES);
             for(int i = 0 ; i < poll.size() ; i++){
                 String sc = poll.get(i).getValue();
